@@ -6,7 +6,7 @@
 #include <ArduinoJson.h>
 
 const char* ssid = "FASTWEB-B80DEF";
-const char* password = "C77H1JCWCR";
+const char* password = "aaaa";
 const char* serverAddress = "http://192.168.1.171:8000"; // Replace with your server address
 WiFiClient wifiClient;
 HttpClient httpClient = HttpClient(wifiClient, serverAddress);
