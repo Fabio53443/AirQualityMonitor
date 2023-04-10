@@ -4,7 +4,7 @@
 #include "Adafruit_BME680.h"
 #include <ArduinoJson.h>
 #include <ESP8266HTTPClient.h>
-#define SERVER_IP "192.168.200.47:8000"
+#define SERVER_IP "api.aqm.fmpjo.tk:8000"
 
 #ifndef STASSID
 #define STASSID "Op"
@@ -12,6 +12,7 @@
 #endif
 
 #define SEALEVELPRESSURE_HPA (1013.25)
+#define DEVICEID 1
 
 Adafruit_BME680 bme; // I2C
 
@@ -72,6 +73,7 @@ void loop() {
   // Create a JSON object with the sensor data
   DynamicJsonDocument doc(1024);
   doc["timestamp"] = millis(); // Add a timestamp
+  doc["deviceid"] = DEVICEID;
   doc["temperature"] = temperature;
   doc["pressure"] = pressure;
   doc["altitude"] = altitude;
@@ -121,8 +123,7 @@ void loop() {
 
     http.end();
   }
-  delay(2000);
-  delay(10000);
+  delay(100000);
 }
 double dewPointFast(double celsius, double humidity)
 {
