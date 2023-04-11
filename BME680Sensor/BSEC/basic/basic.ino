@@ -1,4 +1,26 @@
+#include <ESP8266WiFi.h>
+#include <Wire.h>
 #include "bsec.h"
+#include <ArduinoJson.h>
+#include <ESP8266HTTPClient.h>
+#define SERVER_IP "api.aqm.fmpjo.tk:8000"
+
+#ifndef STASSID
+#define STASSID "Op"
+#define STAPSK "12345678"
+#endif
+
+#define SEALEVELPRESSURE_HPA (1013.25)
+#define DEVICEID 1
+#ifndef STASSID
+#define STASSID "Op"
+#define STAPSK "12345678"
+#endif
+
+#define SEALEVELPRESSURE_HPA (1013.25)
+#define DEVICEID 1
+
+
 
 // Helper functions declarations
 void checkIaqSensorStatus(void);
@@ -12,8 +34,18 @@ String output;
 // Entry point for the example
 void setup(void)
 {
+
   Serial.begin(115200);
   Wire.begin();
+  WiFi.begin(STASSID, STAPSK);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.print("Connected! IP address: ");
+  Serial.println(WiFi.localIP());
 
   iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
   output = "\nBSEC library version " + String(iaqSensor.version.major) + "." + String(iaqSensor.version.minor) + "." + String(iaqSensor.version.major_bugfix) + "." + String(iaqSensor.version.minor_bugfix);
@@ -62,6 +94,75 @@ void loop(void)
   } else {
     checkIaqSensorStatus();
   }
+
+  float rawTemperature = iaqSensor.rawTemperature;
+  float pressure = iaqSensor.pressure;
+  float rawHumidity = iaqSensor.rawHumidity;
+  float gas = iaqSensor.gasResistance;
+  float iaq = iaqSensor.iaq;
+  float iaqAccuracy = iaqSensor.iaqAccuracy;
+  float temperature = iaqSensor.temperature;
+  float humidity = iaqSensor.humidity;
+  float staticIaq = iaqSensor.staticIaq;
+  float co2Equivalent = iaqSensor.co2Equivalent;
+    
+  float breathVocEquivalent = iaqSensor.breathVocEquivalent;
+
+
+  DynamicJsonDocument doc(1024);
+  doc["timestamp"] = millis(); // Add a timestamp
+  doc["deviceid"] = DEVICEID;
+  doc["iaq"] = iaq;
+  doc["iaq_accuracy"] = iaqAccuracy;
+  doc["static_iaq"] = staticIaq;
+  doc["co2_equivalent"] = co2Equivalent;
+  doc["breath_voc_equivalent"] = breathVocEquivalent;
+  doc["temperature"] = temperature;
+  doc["pressure"] = pressure;
+  doc["humidity"] = humidity;
+  doc["gas"] = gas;
+
+  // Serialize the JSON object into a string
+  String payload;
+  serializeJson(doc, payload);
+  Serial.println(payload);
+  delay(2000);
+
+  // wait for WiFi connection
+  if ((WiFi.status() == WL_CONNECTED)) {
+
+    WiFiClient client;
+    HTTPClient http;
+
+    Serial.print("[HTTP] begin...\n");
+    // configure traged server and url
+    http.begin(client, "http://" SERVER_IP "/");  // HTTP
+    http.addHeader("Content-Type", "application/json");
+
+    Serial.print("[HTTP] POST...\n");
+    // start connection and send HTTP header and body
+    int httpCode = http.POST(payload);
+
+    // httpCode will be negative on error
+    if (httpCode > 0) {
+      // HTTP header has been send and Server response header has been handled
+      Serial.printf("[HTTP] POST... code: %d\n", httpCode);
+
+      // file found at server
+      if (httpCode == HTTP_CODE_OK) {
+        const String& payload = http.getString();
+        Serial.println("received payload:\n<<");
+        Serial.println(payload);
+        Serial.println(">>");
+      }
+    } else {
+      Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
+    }
+
+    http.end();
+  }
+  delay(100000);  
+
 }
 
 // Helper function definitions
