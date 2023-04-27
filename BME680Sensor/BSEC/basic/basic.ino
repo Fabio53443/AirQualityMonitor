@@ -3,12 +3,7 @@
 #include "bsec.h"
 #include <ArduinoJson.h>
 #include <ESP8266HTTPClient.h>
-#define SERVER_IP "api.aqm.fmpjo.tk:8000"
-
-#ifndef STASSID
-#define STASSID "Op"
-#define STAPSK "12345678"
-#endif
+#define SERVER_IP "SERVIP"
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 #define DEVICEID 1
@@ -16,10 +11,6 @@
 #define STASSID "Op"
 #define STAPSK "12345678"
 #endif
-
-#define SEALEVELPRESSURE_HPA (1013.25)
-#define DEVICEID 1
-
 
 
 // Helper functions declarations
@@ -161,7 +152,7 @@ void loop(void)
 
     http.end();
   }
-  delay(100000);  
+  delay(100);  
 
 }
 
